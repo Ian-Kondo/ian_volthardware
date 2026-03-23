@@ -1,90 +1,78 @@
 import axios from "axios";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import NavbarComponent from "./NavbarComponent"
+import { useLocation } from "react-router-dom";
 
-const SignInComponent = () => {
-    let[email, updateEmail] = useState("");
-    let[password, updatePassword] = useState("");
+const MakePaymentComponent = () => {
+   const {product} = useLocation().state || {}
+   let [phone, setPhone] = useState("")
 
-    let[loading, setLoading] = useState("");
-    let[error, setError] = useState("");
-    let[success, setSuccess] = useState("");
+   let [loading, setLoading] = useState("")
+   let [error, setError] = useState("")
+   let [success, setSuccess] = useState("")
+   const img_url = "https://iank.alwaysdata.net/static/images/"
+   console.log(product);
 
-    //hook use navigate for automatically changing thwe rtoute
-    let navigator = useNavigate();
+   const handleSubmit = async (e) =>{
+    e.preventDefault();
 
+    setError("")
+    setSuccess("")
+    setLoading("Please wait ...")
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
-        setSuccess("");
-        setLoading("Please Wait...");
+    try {
+        const data = new FormData()
+        data.append("amount", product.product_cost)
+        data.append("phone", phone)
 
-        try {
-            //create form data
-            const user_data = new FormData();
+        const response = await axios.post("https://iank.alwayasdata.net/api/mpesa_payment", data)
+        console.log(response);
 
-            //add the email and password to user data
-            user_data.append("email", email);
-            user_data.append("password", password);
-
-            //use axios to send data to server/backend and get response
-            const response = await axios.post("https://iank.alwaysdata.net/api/signin",user_data)
-            console.log(response);
-            if(response.data.user) {
-                setLoading("")
-                setSuccess(response.data.message)
-                localStorage.setItem("user",JSON.stringify(response.data.user))
-                navigator("/")
-            }else {
-                setLoading("")
-                setError(response.data.message)
-            }
-        } catch (error) {
-            setLoading("")
-            setError(error.message)
-            
+        if (response.status === 200) {
+            setLoading("");
+            setSuccess(response.data.message);
         }
+    } catch (error) {
+        setLoading("")
+        setError(error.message);
     }
+   }
+
     return(
-        <div className="row justify-content-center mt-4">
-            <NavbarComponent/>
-            <div className="col-md-6 card shadow p-4">
-            <h2>Sign In</h2>
-            <h5 className="text-warning">{loading}</h5>
-            <h5 className="text-danger">{error}</h5>
-            <h5 className="text-success">{success}</h5>
+        <div className="row justify-content-center mt-3">
+            <h2>LIPA NA MPESA</h2>
+            <div className="col-md-3">
+                <img src={img_url+product.product_image} className="rounded img-thumbnail" alt="" />
+                </div>
+                <div className="col-md-3">
+                    <h2 className="text-dark">{product.product_name}</h2>
+                    <h5 className="text-primary">{product.product_category}</h5>
+                    <p className="text-muted">{product.product_description}</p>
+                    <h3 className="text-warning">{product.product_cost}</h3>
+                    <hr />
+                    <h6 className="text-warning">{loading}</h6>
+                    <h6 className="text-danger">{error}</h6>
+                    <h6 className="text-succes">{success}</h6>
 
-            <form onSubmit={handleSubmit}>
-                <input 
-                type="email" 
-                className="form-control my-3" 
-                placeholder="Enter email" 
-                required
-                onChange={(e) =>{updateEmail(e.target.value);
-                }}
-                value={email}
-                 />
-                <br />
-
-                <input 
-                type="password" 
-                className="form-control my-3"
-                placeholder="Enter Password"
-                required
-                onChange={(e) =>{updatePassword(e.target.value);
-                }}
-                value={password}
-                br />
-
-                <button className="btn-btn-primary my-3">Sign In</button> <br />
-                <Link to="/signin">Don't have an account?Sign Up</Link>
-                 
-            </form>
-            </div> 
-        </div>
+                    <form onSubmit={handleSubmit}>
+                        <input type="text" 
+                        className="form-control" 
+                        readOnly
+                        value={product.product_cost}
+                        placeholder="Enter amount"
+                        />
+                        <br />
+                        <input type="text" 
+                        className="form-control" 
+                        placeholder="Enter Mpesa Number 254xxxxxxx"
+                        onChange={(e)=>{setPhone(e.target.value)}}
+                        />
+                        
+                        <button className="btn btn-dark">Pay Now</button>
+                    </form>
+                </div>
+            </div>
+        
     );
 }
 
-export default SignInComponent;
+export default MakePaymentComponent;
